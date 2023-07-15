@@ -9,7 +9,7 @@ def execute_user_choice(choice_values: Union[list, tuple], *target_functions):
     def display_invalid_input_error():
         print("Invalid input. Please enter a valid option.\n")
 
-    print("Please select an option")
+    print("\nPlease select an option")
     for i, choice in enumerate(choice_values):
         print(f"[{i+1}] {choice}")
     print()
@@ -34,10 +34,10 @@ def execute_user_choice(choice_values: Union[list, tuple], *target_functions):
 def welcome():
     print("\nRunPod Stable Diffusion Helper by @neonnskye\n")
     print("IMPORTANT! MAKE SURE YOU ARE RUNNING FROM 'WORKSPACE' DIRECTORY")
-    print()
-
-    choice_names = ["Download models", "Edit datasets", "Quit"]
-    execute_user_choice(choice_names, download_models, manage_datasets, quit)
+    choice_names = ["Download models", "Edit datasets", "Transfer files", "Quit"]
+    execute_user_choice(
+        choice_names, download_models, edit_datasets, transfer_files, quit
+    )
 
 
 def download_models():
@@ -124,8 +124,52 @@ def download_model(model_url):
     shutil.move(file_name, os.path.join(destination_dir, file_name))
 
 
-def manage_datasets():
-    pass
+def edit_datasets():
+    def verify_directory(directory):
+        image_files = []
+        text_files = []
+
+        for file in os.listdir(directory):
+            if os.path.isfile(os.path.join(directory, file)):
+                if file.lower().endswith(
+                    (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".webp")
+                ):
+                    image_files.append(file)
+                elif file.lower().endswith(".txt"):
+                    text_files.append(file)
+
+        if not image_files or not text_files:
+            return False
+
+        if len(image_files) != len(text_files):
+            return False
+
+        for image_file in image_files:
+            image_name, _ = os.path.splitext(image_file)
+            text_file = image_name + ".txt"
+            if text_file not in text_files:
+                return False
+
+        return True
+
+    dataset_directories = []
+    for item_path in os.listdir():
+        if os.path.isdir(item_path):
+            if verify_directory(item_path):
+                dataset_directories.append(item_path)
+
+    print(
+        f"Found {len(dataset_directories)} valid datasets! Select a dataset to continue."
+    )
+    execute_user_choice(dataset_directories, edit_dataset)
+
+
+def edit_dataset(directory):
+    print(f"editing {directory}")
+
+
+def transfer_files():
+    print("transfer files")
 
 
 if __name__ == "__main__":
