@@ -2,6 +2,7 @@ import os
 import re
 import requests
 import shutil
+import zipfile
 from typing import Union
 
 
@@ -158,14 +159,44 @@ def edit_datasets():
             if verify_directory(item_path):
                 dataset_directories.append(item_path)
 
-    print(
-        f"Found {len(dataset_directories)} valid datasets! Select a dataset to continue."
-    )
+    print(f"Found {len(dataset_directories)} valid datasets! Select a dataset to edit.")
     execute_user_choice(dataset_directories, edit_dataset)
 
 
-def edit_dataset(directory):
-    print(f"editing {directory}")
+def edit_dataset(dataset_name):
+    print("Uploading files...")
+    upload_zip_filename = dataset_name + ".zip"
+    with zipfile.ZipFile(upload_zip_filename, "w") as upload_zip_file:
+        for item in os.listdir(dataset_name):
+            upload_zip_file.write(os.path.join(dataset_name, item), item)
+
+    url = "https://neonnskye.pythonanywhere.com/upload"
+
+    with open(upload_zip_filename, "rb") as file:
+        response = requests.post(url, files={"file": file})
+        dataset_url = response.text.replace(" ", "%20")
+    os.remove(upload_zip_filename)
+
+    print("\nDataset uploaded successfully!")
+    print(f"You can edit it at https://neonnskye.pythonanywhere.com/edit/{dataset_url}")
+    input("\nPress any key to coninue after you submit your edits: ")
+
+    print("\nDownloading...")
+    response = requests.get(
+        f"https://neonnskye.pythonanywhere.com/download/{dataset_url}", stream=True
+    )
+    download_zip_filename = dataset_name + ".zip"
+    with open(download_zip_filename, "wb") as download_zip_file:
+        for chunk in response.iter_content(chunk_size=8192):
+            download_zip_file.write(chunk)
+
+    with zipfile.ZipFile(download_zip_filename, "r") as zip_to_extract:
+        zip_to_extract.extractall(dataset_name)
+    os.remove(download_zip_filename)
+
+    print("\nYour edits have been saved!")
+    input("Press any key to continue: ")
+    quit()
 
 
 def transfer_files():
