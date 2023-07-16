@@ -3,6 +3,7 @@ import re
 import requests
 import shutil
 import zipfile
+import subprocess
 from typing import Union
 
 
@@ -10,7 +11,7 @@ def execute_user_choice(choice_values: Union[list, tuple], *target_functions):
     def display_invalid_input_error():
         print("Invalid input. Please enter a valid option.\n")
 
-    print("\nPlease select an option")
+    print("Please select an option")
     for i, choice in enumerate(choice_values):
         print(f"[{i+1}] {choice}")
     print()
@@ -36,6 +37,7 @@ def welcome():
     print("\nRunPod Stable Diffusion Helper by @neonnskye\n")
     print("IMPORTANT! MAKE SURE YOU ARE RUNNING FROM 'WORKSPACE' DIRECTORY")
     choice_names = ["Download models", "Edit datasets", "Transfer files", "Quit"]
+    print()
     execute_user_choice(
         choice_names, download_models, edit_datasets, transfer_files, quit
     )
@@ -160,6 +162,7 @@ def edit_datasets():
                 dataset_directories.append(item_path)
 
     print(f"Found {len(dataset_directories)} valid datasets! Select a dataset to edit.")
+    print()
     execute_user_choice(dataset_directories, edit_dataset)
 
 
@@ -200,7 +203,26 @@ def edit_dataset(dataset_name):
 
 
 def transfer_files():
-    print("transfer files")
+    choice_names = ["Send files", "Receive files"]
+    execute_user_choice(choice_names, send_files, receive_file)
+
+
+def send_files():
+    execute_user_choice(os.listdir(), send_file)
+
+
+def send_file(file):
+    subprocess.run(["runpodctl", "send", file])
+
+
+def receive_file():
+    print("Run the following command on your local machine\n")
+    print("runpodctl send filename\n")
+    print("Paste in the code you received.")
+    print("Example: 7052-legacy-harris-shirt-5")
+
+    receive_code = input("\nCode: ")
+    subprocess.run(["runpodctl", "receive", receive_code])
 
 
 if __name__ == "__main__":
