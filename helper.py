@@ -2,6 +2,7 @@ import os
 import re
 import requests
 import shutil
+import zipfile
 from typing import Union
 
 
@@ -9,7 +10,7 @@ def execute_user_choice(choice_values: Union[list, tuple], *target_functions):
     def display_invalid_input_error():
         print("Invalid input. Please enter a valid option.\n")
 
-    print("Please select an option")
+    print("\nPlease select an option")
     for i, choice in enumerate(choice_values):
         print(f"[{i+1}] {choice}")
     print()
@@ -34,10 +35,10 @@ def execute_user_choice(choice_values: Union[list, tuple], *target_functions):
 def welcome():
     print("\nRunPod Stable Diffusion Helper by @neonnskye\n")
     print("IMPORTANT! MAKE SURE YOU ARE RUNNING FROM 'WORKSPACE' DIRECTORY")
-    print()
-
-    choice_names = ["Download models", "Edit datasets", "Quit"]
-    execute_user_choice(choice_names, download_models, manage_datasets, quit)
+    choice_names = ["Download models", "Edit datasets", "Transfer files", "Quit"]
+    execute_user_choice(
+        choice_names, download_models, edit_datasets, transfer_files, quit
+    )
 
 
 def download_models():
@@ -124,8 +125,82 @@ def download_model(model_url):
     shutil.move(file_name, os.path.join(destination_dir, file_name))
 
 
-def manage_datasets():
-    pass
+def edit_datasets():
+    def verify_directory(directory):
+        image_files = []
+        text_files = []
+
+        for file in os.listdir(directory):
+            if os.path.isfile(os.path.join(directory, file)):
+                if file.lower().endswith(
+                    (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".webp")
+                ):
+                    image_files.append(file)
+                elif file.lower().endswith(".txt"):
+                    text_files.append(file)
+
+        if not image_files or not text_files:
+            return False
+
+        if len(image_files) != len(text_files):
+            return False
+
+        for image_file in image_files:
+            image_name, _ = os.path.splitext(image_file)
+            text_file = image_name + ".txt"
+            if text_file not in text_files:
+                return False
+
+        return True
+
+    dataset_directories = []
+    for item_path in os.listdir():
+        if os.path.isdir(item_path):
+            if verify_directory(item_path):
+                dataset_directories.append(item_path)
+
+    print(f"Found {len(dataset_directories)} valid datasets! Select a dataset to edit.")
+    execute_user_choice(dataset_directories, edit_dataset)
+
+
+def edit_dataset(dataset_name):
+    print("Uploading files...")
+    upload_zip_filename = dataset_name + ".zip"
+    with zipfile.ZipFile(upload_zip_filename, "w") as upload_zip_file:
+        for item in os.listdir(dataset_name):
+            upload_zip_file.write(os.path.join(dataset_name, item), item)
+
+    url = "https://neonnskye.pythonanywhere.com/upload"
+
+    with open(upload_zip_filename, "rb") as file:
+        response = requests.post(url, files={"file": file})
+        dataset_url = response.text.replace(" ", "%20")
+    os.remove(upload_zip_filename)
+
+    print("\nDataset uploaded successfully!")
+    print(f"You can edit it at https://neonnskye.pythonanywhere.com/edit/{dataset_url}")
+    input("\nPress any key to coninue after you submit your edits: ")
+
+    print("\nDownloading...")
+    response = requests.get(
+        f"https://neonnskye.pythonanywhere.com/download/{dataset_url}", stream=True
+    )
+    download_zip_filename = dataset_name + ".zip"
+    with open(download_zip_filename, "wb") as download_zip_file:
+        for chunk in response.iter_content(chunk_size=8192):
+            download_zip_file.write(chunk)
+
+    with zipfile.ZipFile(download_zip_filename, "r") as zip_to_extract:
+        zip_to_extract.extractall(dataset_name)
+    os.remove(download_zip_filename)
+
+    print("\nYour edits have been saved!")
+    input("Press any key to continue: ")
+    quit()
+
+
+def transfer_files():
+    print("transfer files")
 
 
 if __name__ == "__main__":
