@@ -7,8 +7,15 @@ Helper script for Stable Diffusion on RunPod. Download models, edit datasets and
 3. Download this script using the following command
 ```shell
 wget https://raw.githubusercontent.com/neonnskye/runpod-sd-helper/main/helper.py
+python3 helper.py
 ```
 3. Run the script using the following command
 ```shell
 python helper.py
+```
+
+To run the Kohya SS GUI Installer
+```shell
+wget https://raw.githubusercontent.com/neonnskye/runpod-sd-helper/main/install_kohya_ss.sh
+bash install_kohya_ss.sh
 ```
