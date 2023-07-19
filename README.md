@@ -16,5 +16,9 @@ python helper.py
 To run the Kohya SS GUI Installer
 ```shell
 wget https://raw.githubusercontent.com/neonnskye/runpod-sd-helper/main/install_kohya_ss.sh
+```
+
+And then
+```shell
 bash install_kohya_ss.sh
 ```
